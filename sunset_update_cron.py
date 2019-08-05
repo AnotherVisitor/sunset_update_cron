@@ -14,29 +14,26 @@ RAD = pi/180.0
 Twilight = 1 
 
 if (Twilight == 0): Horizon = -(50.0/60.0)*RAD  # normal twilight
-elif (Twilight == 1): Horizon = -6*RAD          # civil twilight
-elif (Twilight == 2): Horizon = -12*RAD         # nautical twilight
-elif (Twilight == 3): Horizon = -18*RAD         # astronomical twilight
+elif (Twilight == 1): Horizon = -6*RAD            # civil twilight
+elif (Twilight == 2): Horizon = -12*RAD           # nautical twilight
+elif (Twilight == 3): Horizon = -18*RAD           # astronomical twilight
 
 Latitude = 50.459227
 Longitude = 9.607250
 LatitudeInRad = Latitude*RAD
 
-def setzone(): #This is used to find the first and last day of summer time.
-  year  = datetime.date.today().year
-  dateToday = datetime.date.today()
-  #dateToday = date(year,11,10)
+def setzone(i_year, i_month, i_day): #This is used to find the first and last day of summer time.
+  
+  d_date = date(i_year, i_month, i_day)
   
   #calculate last sunday in March
-  day3  = max(week[-1] for week in calendar.monthcalendar(year, 3))
-  dayOfSummertimeStart = date(year,3,day3)
+  day3  = max(week[-1] for week in calendar.monthcalendar(i_year, 3))
+  dayOfSummertimeStart = date(i_year,3,day3)
   #calculate last sunday in October
-  day10 = max(week[-1] for week in calendar.monthcalendar(year, 10))
-  dayOfSummertimeEnd = date(year,10,day10)
+  day10 = max(week[-1] for week in calendar.monthcalendar(i_year, 10))
+  dayOfSummertimeEnd = date(i_year,10,day10)
   
-  if dateToday < dayOfSummertimeStart:
-    Zone = 1
-  elif dateToday >= dayOfSummertimeStart and dateToday <= dayOfSummertimeEnd:
+  if d_date >= dayOfSummertimeStart and d_date <= dayOfSummertimeEnd:
     Zone = 2
   else:
     Zone = 1
@@ -73,15 +70,23 @@ def sunset(DOY):
   DK = sunDeclination(DOY)
   return (12 + timeDifference(DK) - timeFormula(DOY));
 
-Zone = setzone();
-dateToday = datetime.datetime.now();
-DOY = float(dateToday.strftime('%j'));
+
+
+
+#######################
+#main here
+
+
+dateToCheck = datetime.datetime.today();
+Zone = setzone(dateToCheck.year, dateToCheck.month, dateToCheck.day);
+
+DOY = float(dateToCheck.strftime('%j'));
 
 Sunrise = sunrise(DOY)
 Sunset  = sunset(DOY)
 
-Sunrise    = Sunrise   - Longitude /15.0 + Zone
-Sunset  = Sunset - Longitude /15.0 + Zone
+Sunrise    = Sunrise   - Longitude / 15.0 + Zone
+Sunset  = Sunset - Longitude / 15.0 + Zone
 
 # print Sunrise
 RiseMin,RiseStd = math.modf(Sunrise)
@@ -115,7 +120,7 @@ mycron.write()
 
 #Write to logfile
 myFile = open('/home/heiko/outsideLight/outsideLight.log', 'a') 
-myFile.write(dateToday.strftime('%d-%m-%Y %H:%M '))
+myFile.write(dateToCheck.strftime('%d.%m.%Y %H:%M '))
 myFile.write('DOY:%d ' % (DOY))
 myFile.write('Sunset:%d:%d ' % (SetStd, SetMin))
 myFile.write('Twilight:' + str(Twilight))
