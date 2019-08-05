@@ -14,9 +14,9 @@ RAD = pi/180.0
 Twilight = 1 
 
 if (Twilight == 0): Horizon = -(50.0/60.0)*RAD  # normal twilight
-elif (Twilight == 1): Horizon = -6*RAD            # civil twilight
-elif (Twilight == 2): Horizon = -12*RAD           # nautical twilight
-elif (Twilight == 3): Horizon = -18*RAD           # astronomical twilight
+elif (Twilight == 1): Horizon = -6*RAD          # civil twilight
+elif (Twilight == 2): Horizon = -12*RAD         # nautical twilight
+elif (Twilight == 3): Horizon = -18*RAD         # astronomical twilight
 
 Latitude = 50.459227
 Longitude = 9.607250
@@ -46,7 +46,7 @@ def setzone(): #This is used to find the first and last day of summer time.
     print ('dayOfSummertimeStart: ' + str(dayOfSummertimeStart) + '\n')
     print ('day10:%d \n' % (day10))
     print ('dayOfSummertimeEnd: ' + str(dayOfSummertimeEnd) + '\n')	
-	print ('Zone:%d \n' % (Zone))
+    print ('Zone:%d \n' % (Zone))
 
   return (Zone)
 
