@@ -8,3 +8,6 @@ As the time of the sunset and sunrise is different every day, this script runs o
 Schedule the script itself by using cron
 E.g.:
 0 */12 * * * python /home/user/light/sunset_update_cron.py
+
+sunset_calc.py
+Print Sunset and Sunrise for each day of a year
