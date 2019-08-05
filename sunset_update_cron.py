@@ -98,7 +98,6 @@ SetMin,SetStd = math.modf(Sunset)
 SetMin = SetMin * 60
 #print ('Sunset : ' + '%02d:%02d' % (SetStd,SetMin))
 
-
 #crontab stuff starts here
 #Either update the existing job or create a new one
 mycron = CronTab(user='heiko')
@@ -117,12 +116,12 @@ if (CronjobExists == 0):
 
 mycron.write()
 
-
 #Write to logfile
 myFile = open('/home/heiko/outsideLight/outsideLight.log', 'a') 
 myFile.write(dateToCheck.strftime('%d.%m.%Y %H:%M '))
 myFile.write('DOY:%d ' % (DOY))
 myFile.write('Sunset:%d:%d ' % (SetStd, SetMin))
+myFile.write('Sunrise:%d:%d ' % (RiseStd, RiseMin))
 myFile.write('Twilight:' + str(Twilight))
 myFile.write(' Zone:%d' % (Zone))
 myFile.write('\n')
