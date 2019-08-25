@@ -11,41 +11,47 @@ pi = 3.1415926536
 RAD = pi/180.0
 
 # 0-normal twilight, 1-civil twilight, 2-nautical twilight, 3-astronomical twilight
-Twilight = 1 
+i_twilight = 1 
 
-if (Twilight == 0): Horizon = -(50.0/60.0)*RAD  # normal twilight
-elif (Twilight == 1): Horizon = -6*RAD            # civil twilight
-elif (Twilight == 2): Horizon = -12*RAD           # nautical twilight
-elif (Twilight == 3): Horizon = -18*RAD           # astronomical twilight
+# 1-Standard time, 2-Summertime (+1h)
+# For Germany 1 hour must be added to CT to get CET (i_addToCT=1), 2 hours must be added during summer time (i_addToCT=2).  
+i_addToCT = 0
+
+if (i_twilight == 0): Horizon = -(50.0/60.0)*RAD  # normal twilight
+elif (i_twilight == 1): Horizon = -6*RAD            # civil twilight
+elif (i_twilight == 2): Horizon = -12*RAD           # nautical twilight
+elif (i_twilight == 3): Horizon = -18*RAD           # astronomical twilight
 
 Latitude = 50.459227
 Longitude = 9.607250
 LatitudeInRad = Latitude*RAD
 
-def setzone(i_year, i_month, i_day): #This is used to find the first and last day of summer time.
+def addToCentralTime(i_year, i_month, i_day): 
+  # This is used to calculate the hours that need to be added to CT to get the local time.
+  # Returns 1 for normal time and 2 during summer time.
   
   d_date = date(i_year, i_month, i_day)
   
   #calculate last sunday in March
-  day3  = max(week[-1] for week in calendar.monthcalendar(i_year, 3))
-  dayOfSummertimeStart = date(i_year,3,day3)
+  lastSundayInMarch  = max(week[-1] for week in calendar.monthcalendar(i_year, 3))
+  dayOfSummertimeStart = date(i_year,3,lastSundayInMarch)
   #calculate last sunday in October
-  day10 = max(week[-1] for week in calendar.monthcalendar(i_year, 10))
-  dayOfSummertimeEnd = date(i_year,10,day10)
+  lastSundayInOctober = max(week[-1] for week in calendar.monthcalendar(i_year, 10))
+  dayOfSummertimeEnd = date(i_year,10,lastSundayInOctober)
   
   if d_date >= dayOfSummertimeStart and d_date <= dayOfSummertimeEnd:
-    Zone = 2
+    i_addToCT = 2
   else:
-    Zone = 1
+    i_addToCT = 1
 	
   if (debug == 1):
-    print ('day3:%d \n' % (day3))
+    print ('lastSundayInMarch:%d \n' % (lastSundayInMarch))
     print ('dayOfSummertimeStart: ' + str(dayOfSummertimeStart) + '\n')
-    print ('day10:%d \n' % (day10))
+    print ('lastSundayInOctober:%d \n' % (lastSundayInOctober))
     print ('dayOfSummertimeEnd: ' + str(dayOfSummertimeEnd) + '\n')	
-    print ('Zone:%d \n' % (Zone))
+    print ('i_addToCT:%d \n' % (i_addToCT))
 
-  return (Zone)
+  return (i_addToCT)
 
 
 def sunDeclination(DOY):
@@ -78,25 +84,31 @@ def sunset(DOY):
 
 
 dateToCheck = datetime.datetime.today();
-Zone = setzone(dateToCheck.year, dateToCheck.month, dateToCheck.day);
+i_addToCT = addToCentralTime(dateToCheck.year, dateToCheck.month, dateToCheck.day);
 
 DOY = float(dateToCheck.strftime('%j'));
+i_DOY = int(DOY);
 
 Sunrise = sunrise(DOY)
 Sunset  = sunset(DOY)
 
-Sunrise    = Sunrise   - Longitude / 15.0 + Zone
-Sunset  = Sunset - Longitude / 15.0 + Zone
+Sunrise    = Sunrise   - Longitude / 15.0 + i_addToCT
+Sunset  = Sunset - Longitude / 15.0 + i_addToCT
 
-# print Sunrise
+# Sunrise
 RiseMin,RiseStd = math.modf(Sunrise)
-RiseMin = RiseMin * 60
-#print ('Sunrise   : ' + '%02d:%02d' % (RiseStd,RiseMin))
+i_RiseMin = int(RiseMin * 60)
+i_RiseStd = int(RiseStd)
+if (debug == 1):
+   print ('Sunrise:{:02d}:{:02d} '.format(i_RiseStd,i_RiseMin))
 
-# print Sunset
+# Sunset
 SetMin,SetStd = math.modf(Sunset)
-SetMin = SetMin * 60
-#print ('Sunset : ' + '%02d:%02d' % (SetStd,SetMin))
+i_SetMin = int(SetMin * 60)
+i_SetStd = int(SetStd)
+if (debug == 1):
+   print ('Sunset:{:02d}:{:02d} '.format(i_SetStd,i_SetMin))
+
 
 #crontab stuff starts here
 #Either update the existing job or create a new one
@@ -105,24 +117,24 @@ mycron = CronTab(user='heiko')
 CronjobExists = 0
 for item in mycron:
   if item.comment == 'sunset':
-    item.hour.on(int(SetStd))
-    item.minute.on(int(SetMin))
+    item.hour.on(i_SetStd)
+    item.minute.on(i_SetMin)
     CronjobExists = 1
 
 if (CronjobExists == 0): 
   job = mycron.new(command='python /home/heiko/outsideLight/licht_aussen_an.py', comment='sunset')
-  job.hour.on(int(SetStd))
-  job.minute.on(int(SetMin))
+  job.hour.on(i_SetStd)
+  job.minute.on(i_SetMin)
 
 mycron.write()
 
 #Write to logfile
 myFile = open('/home/heiko/outsideLight/outsideLight.log', 'a') 
 myFile.write(dateToCheck.strftime('%d.%m.%Y %H:%M '))
-myFile.write('DOY:%d ' % (DOY))
-myFile.write('Sunset:%d:%d ' % (SetStd, SetMin))
-myFile.write('Sunrise:%d:%d ' % (RiseStd, RiseMin))
-myFile.write('Twilight:' + str(Twilight))
-myFile.write(' Zone:%d' % (Zone))
+myFile.write('DOY:{:03d} '.format(i_DOY))
+myFile.write('Sunset:{:02d}:{:02d} '.format(i_SetStd,i_SetMin))
+myFile.write('Sunrise:{:02d}:{:02d} '.format(i_RiseStd,i_RiseMin))
+myFile.write('Twilight:{:d} '.format(i_twilight))
+myFile.write('Zone:{:d}'.format(i_addToCT))
 myFile.write('\n')
 myFile.close()
